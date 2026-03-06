@@ -149,3 +149,30 @@ class User(Document):
 
     def __str__(self):
         return f"<User {self.email}>"
+
+
+class AuthToken(Document):
+    user       = ReferenceField(User, required=True)
+    token      = StringField(required=True, unique=True)
+    type       = StringField(choices=['email_verification'], default='email_verification')
+    expires_at = DateTimeField(required=True)
+    attempts   = IntField(default=0, min_value=0, max_value=3)
+
+    created_at = DateTimeField(default=datetime.utcnow)
+    updated_at = DateTimeField(default=datetime.utcnow)
+
+    meta = {
+        'collection': 'auth_tokens',
+        'indexes': [
+            'user',
+            {'fields': ['expires_at'], 'expireAfterSeconds': 0},  # TTL — auto-delete on expiry
+            ('user', 'type'),
+        ]
+    }
+
+    def save(self, *args, **kwargs):
+        self.updated_at = datetime.utcnow()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"<AuthToken {self.type} [{self.user}]>"
