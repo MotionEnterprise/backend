@@ -1,0 +1,257 @@
+{
+  "prompt": {
+    "description": "Main Prompt entity with version control and extensible metadata",
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Unique identifier",
+        "example": "550e8400-e29b-41d4-a716-446655440000"
+      },
+     "prompt_id": {
+        "type": "string",
+        "description": "Explicit prompt-scoped identifier for referencing across systems",
+        "example": "name-something "
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "unique": true,
+        "description": "Human-readable prompt name",
+        "example": "Instagram Product Caption Generator"
+      },
+      "description": {
+        "type": "string",
+        "description": "Detailed description of prompt purpose",
+        "example": "Generates engaging Instagram captions for product launches with emoji and hashtags"
+      },
+      "versioning": {
+        "type": "object",
+        "description": "Version control for the prompt",
+        "properties": {
+          "versions": {
+            "type": "array",
+            "items": { "$ref": "#/schemas/prompt_version" },
+            "description": "Complete version history"
+          },
+          "active_version": {
+            "type": "string",
+            "description": "Currently active version identifier",
+            "example": "1.2.0"
+          }
+        }
+      },
+      "content": {
+        "type": "object",
+        "description": "Core prompt content and input definition",
+        "properties": {
+          "text": {
+            "type": "string",
+            "required": true,
+            "description": "The actual prompt text",
+            "example": "You are an expert Instagram marketer. Generate an engaging caption for {product_name} that highlights {key_features}. Include 3-5 relevant hashtags and 2-3 emojis. Keep it under 150 characters."
+          },
+          "language": {
+            "type": "string",
+            "format": "iso-639-1",
+            "default": "en",
+            "example": "en"
+          },
+          "expected_input_vars": {
+  "type": "object",
+  "description": "Input variables schema",
+  "properties": {
+    "dynamic_fields": {
+      "type": "array",
+      "description": "List of dynamic input variables injected into the prompt at runtime",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the variable"
+          },
+          "variable": {
+            "type": "string",
+            "description": "Template placeholder name used in prompt text",
+            "example": "skin_tone"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable display name",
+            "example": "Skin Tone"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["string", "number", "boolean", "array", "enum"],
+            "description": "Data type of the variable"
+          },
+          "required": {
+            "type": "boolean",
+            "default": true
+          },
+          "default_value": {
+            "type": "string",
+            "nullable": true,
+            "description": "Fallback value if not provided"
+          }
+        }
+      },
+      "example": [
+        {
+          "id": "a1b2c3d4-...",
+          "variable": "skin_tone",
+          "label": "Skin Tone",
+          "type": "enum",
+          "required": true,
+          "default_value": null
+        },
+        {
+          "id": "e5f6g7h8-...",
+          "variable": "shot_type",
+          "label": "Macro or Micro Shot",
+          "type": "enum",
+          "required": false,
+          "default_value": "macro"
+        }
+      ]
+    }
+  }
+}
+        }
+      },
+      "classification": {
+        "type": "object",
+        "description": "Categorization and discoverability metadata",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "text_generation",
+              "image_generation",
+              "code_generation",
+              "data_analysis",
+              "creative_writing",
+              "translation",
+              "summarization"
+            ],
+            "example": "text_generation"
+          },
+          "use_case": {
+            "type": "string",
+            "description": "Primary use case description",
+            "example": "Generate Instagram captions for product launches"
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Flexible tagging system",
+            "example": ["marketing", "social-media", "instagram", "product-launch"]
+          },
+          "allowed_industries": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "industry_reference"
+            },
+            "description": "Industries this prompt is applicable to"
+          }
+        }
+      },
+      "compatibility": {
+        "type": "object",
+        "description": "AI model compatibility and execution configuration",
+        "properties": {
+          "model_compatibility": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Compatible AI models",
+            "example": ["gpt-4", "gpt-4-turbo", "claude-3-opus", "claude-3-sonnet"]
+          }
+        }
+      },
+      "usage_stats": {
+        "type": "object",
+        "description": "Execution and performance tracking",
+        "properties": {
+          "total_uses": {
+            "type": "integer",
+            "default": 0,
+            "description": "Total execution count"
+          },
+          "usage_count": {
+            "type": "integer",
+            "default": 0,
+            "description": "Times this specific version was used"
+          },
+          "last_used_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "avg_generation_time": {
+            "type": "number",
+            "format": "float",
+            "description": "Average time in seconds",
+            "example": 2.3
+          },
+          "cost_estimate": {
+            "type": "number",
+            "format": "float",
+            "description": "Average cost per execution in credits",
+            "example": 0.05
+          }
+        }
+      },
+
+      "lifecycle": {
+        "type": "object",
+        "description": "Timestamps and archival state",
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-03-08T10:30:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-03-08T15:45:00Z"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "default": false
+          },
+          "archived_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+
+      "meta": {
+        "$ref": "#/schemas/prompt_metadata",
+        "description": "Extensible metadata (horizontally expandable)"
+      },
+
+      "custom_fields": {
+        "type": "object",
+        "description": "HORIZONTALLY EXPANDABLE — Store any additional metadata",
+        "additionalProperties": true,
+        "example": {
+          "industry": "e-commerce",
+          "platform_specific": "instagram",
+          "character_limit": 150,
+          "emoji_required": true,
+          "hashtag_count": "3-5",
+          "seasonal_relevance": ["summer", "product-launch"],
+          "ab_test_group": "variant_b"
+        }
+      }
+
+    }
+  }
+}

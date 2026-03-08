@@ -1,0 +1,190 @@
+{
+  "id": "550e8400-e29b-41d4-a716-446655440001",
+  "prompt_id": "jewellery-hand-plain",
+  "name": "Jewellery Plain Background Shot",
+  "description": "Product photography prompt for jewellery pieces on clean, seamless studio backgrounds. Ideal for e-commerce catalogs and product listings.",
+  "versioning": {
+    "versions": [
+      {
+        "version": "1.0.0",
+        "created_at": "2025-03-08T10:00:00Z",
+        "changelog": "Initial release"
+      }
+    ],
+    "active_version": "1.0.0"
+  },
+  "content": {
+    "text": "Professional product photography of the jewellery piece shown in the reference image, placed on a seamless {background_color} studio backdrop, {lighting_style} lighting, {shadow_style}, sharp focus on every detail, commercial catalog aesthetic, {shot_type} lens perspective, 8k resolution, photorealistic render, no alterations to jewellery design",
+    "language": "en",
+    "expected_input_vars": {
+      "dynamic_fields": [
+        {
+          "id": "f1a2b3c4-1111-4d5e-a716-446655440001",
+          "variable": "background_color",
+          "label": "Background Color",
+          "type": "string",
+          "required": true,
+          "default_value": "white"
+        },
+        {
+          "id": "f1a2b3c4-2222-4d5e-a716-446655440002",
+          "variable": "lighting_style",
+          "label": "Lighting Style",
+          "type": "string",
+          "required": false,
+          "default_value": "soft diffused"
+        },
+        {
+          "id": "f1a2b3c4-3333-4d5e-a716-446655440003",
+          "variable": "shadow_style",
+          "label": "Shadow Style",
+          "type": "string",
+          "required": false,
+          "default_value": "subtle soft shadow beneath"
+        },
+        {
+          "id": "f1a2b3c4-4444-4d5e-a716-446655440004",
+          "variable": "shot_type",
+          "label": "Shot Type",
+          "type": "string",
+          "required": true,
+          "default_value": "macro"
+        }
+      ]
+    }
+  },
+  "classification": {
+    "category": "image_generation",
+    "use_case": "Generate clean product photography of jewellery on plain studio backgrounds",
+    "tags": ["jewellery", "product-photography", "e-commerce", "plain-background", "catalog", "studio-shot"],
+    "allowed_industries": ["jewellery", "e-commerce", "luxury-goods", "fashion"]
+  },
+  "compatibility": {
+    "model_compatibility": ["flux-2.0-dev","stable-diffusion-xl"]
+  },
+  "usage_stats": {
+    "total_uses": 0,
+    "usage_count": 0,
+    "last_used_at": null,
+    "avg_generation_time": null,
+    "cost_estimate": null
+  },
+  "lifecycle": {
+    "created_at": "2025-03-08T10:00:00Z",
+    "updated_at": "2025-03-08T10:00:00Z",
+    "is_archived": false,
+    "archived_at": null
+  },
+  "meta": {
+    "category": "hand"
+  },
+  "custom_fields": {
+    "photography_type": "plain",
+    "requires_reference_image": true,
+    "preserves_original_design": true,
+    "ideal_for": ["product listings", "website catalog", "comparison shots", "spec sheets"]
+  }
+} ,
+{
+  "id": "550e8400-e29b-41d4-a716-446655440002",
+  "prompt_id": "jewellery-hand-human",
+  "name": "Jewellery Human Model Shot",
+  "description": "Lifestyle product photography prompt for jewellery worn on human body parts. Creates aspirational, editorial-style imagery for marketing and social media.",
+  "versioning": {
+    "versions": [
+      {
+        "version": "1.0.0",
+        "created_at": "2025-03-08T10:00:00Z",
+        "changelog": "Initial release"
+      }
+    ],
+    "active_version": "1.0.0"
+  },
+  "content": {
+    "text": "Lifestyle editorial photography of the jewellery piece shown in the reference image, elegantly worn on a {skin_tone} skin tone {human_part}, {pose_style}, {lighting_style} lighting, {background_style} background, shallow depth of field with soft bokeh, fashion editorial aesthetic, sharp focus on jewellery details, {shot_type} perspective, 8k resolution, photorealistic, no alterations to jewellery design",
+    "language": "en",
+    "expected_input_vars": {
+      "dynamic_fields": [
+        {
+          "id": "a1b2c3d4-1111-4d5e-a716-446655440001",
+          "variable": "skin_tone",
+          "label": "Skin Tone",
+          "type": "string",
+          "required": true,
+          "default_value": "medium"
+        },
+        {
+          "id": "a1b2c3d4-2222-4d5e-a716-446655440002",
+          "variable": "human_part",
+          "label": "Body Part",
+          "type": "string",
+          "required": false,
+          "default_value": "hand"
+        },
+        {
+          "id": "a1b2c3d4-3333-4d5e-a716-446655440003",
+          "variable": "pose_style",
+          "label": "Pose Style",
+          "type": "string",
+          "required": false,
+          "default_value": "relaxed natural pose"
+        },
+        {
+          "id": "a1b2c3d4-4444-4d5e-a716-446655440004",
+          "variable": "lighting_style",
+          "label": "Lighting Style",
+          "type": "string",
+          "required": false,
+          "default_value": "natural soft"
+        },
+        {
+          "id": "a1b2c3d4-5555-4d5e-a716-446655440005",
+          "variable": "background_style",
+          "label": "Background Style",
+          "type": "string",
+          "required": false,
+          "default_value": "blurred neutral"
+        },
+        {
+          "id": "a1b2c3d4-6666-4d5e-a716-446655440006",
+          "variable": "shot_type",
+          "label": "Shot Type",
+          "type": "string",
+          "required": false,
+          "default_value": "macro close-up"
+        }
+      ]
+    }
+  },
+  "classification": {
+    "category": "image_generation",
+    "use_case": "Generate lifestyle photography of jewellery worn on human models",
+    "tags": ["jewellery", "product-photography", "lifestyle", "human-model", "editorial", "fashion", "worn-shot"],
+    "allowed_industries": ["jewellery", "fashion", "luxury-goods", "e-commerce", "social-media-marketing"]
+  },
+  "compatibility": {
+    "model_compatibility": ["flux-2.0-dev", "stable-diffusion-xl"]
+  },
+  "usage_stats": {
+    "total_uses": 0,
+    "usage_count": 0,
+    "last_used_at": null,
+    "avg_generation_time": null,
+    "cost_estimate": null
+  },
+  "lifecycle": {
+    "created_at": "2025-03-08T10:00:00Z",
+    "updated_at": "2025-03-08T10:00:00Z",
+    "is_archived": false,
+    "archived_at": null
+  },
+  "meta": {
+    "category": "hand"
+  },
+  "custom_fields": {
+    "photography_type": "human",
+    "requires_reference_image": true,
+    "preserves_original_design": true,
+    "ideal_for": ["social media", "instagram", "advertising", "lookbooks", "campaign imagery"]
+  }
+}
