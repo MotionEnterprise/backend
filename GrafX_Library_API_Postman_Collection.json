@@ -1,0 +1,296 @@
+{
+  "info": {
+    "name": "GrafX Library API",
+    "description": "Postman collection for GrafX Library API - Prompt CRUD operations",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api/library",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Prompts",
+      "item": [
+        {
+          "name": "List All Prompts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ""]
+            },
+            "description": "Get a list of all prompts with optional filtering"
+          },
+          "response": []
+        },
+        {
+          "name": "List Prompts (with filters)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/?category=text_generation&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ""],
+              "query": [
+                {"key": "category", "value": "text_generation"},
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "20"}
+              ]
+            },
+            "description": "Get prompts filtered by category with pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Prompts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/?search=instagram",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ""],
+              "query": [
+                {"key": "search", "value": "instagram"}
+              ]
+            },
+            "description": "Search prompts by name, description, or tags"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Prompt",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ""]
+            },
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Instagram Product Caption Generator\", \"description\": \"Generates engaging Instagram captions\", \"content\": {\"text\": \"Generate caption for {product_name}\", \"language\": \"en\", \"expected_input_vars\": {\"dynamic_fields\": [{\"variable\": \"product_name\", \"label\": \"Product Name\", \"type\": \"string\", \"required\": true}]}}, \"classification\": {\"category\": \"text_generation\", \"use_case\": \"Generate captions\", \"tags\": [\"marketing\", \"social-media\"]}, \"compatibility\": {\"model_compatibility\": [\"gpt-4\", \"claude-3\"]}, \"created_by\": \"admin\"}"
+            },
+            "description": "Create a new prompt"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Prompt by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/:prompt_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ":prompt_id"]
+            },
+            "description": "Get a single prompt by its ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Prompt (Full)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/:prompt_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ":prompt_id"]
+            },
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Updated Name\", \"description\": \"Updated description\", \"content\": {\"text\": \"Updated content\", \"language\": \"en\"}, \"classification\": {\"category\": \"text_generation\", \"tags\": [\"updated\"]}}"
+            },
+            "description": "Full update of a prompt"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Prompt (Partial)",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/:prompt_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ":prompt_id"]
+            },
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"description\": \"Just updating the description\"}"
+            },
+            "description": "Partial update of a prompt"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Prompt",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/:prompt_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ":prompt_id"]
+            },
+            "description": "Delete a prompt permanently"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Prompt by Name",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/name/:name",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", "name", ":name"]
+            },
+            "description": "Get a prompt by its unique name"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Prompt Actions",
+      "item": [
+        {
+          "name": "Archive Prompt",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/:prompt_id/archive/",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ":prompt_id", "archive", ""]
+            },
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"action\": \"archive\"}"
+            },
+            "description": "Archive a prompt"
+          },
+          "response": []
+        },
+        {
+          "name": "Unarchive Prompt",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/:prompt_id/archive/",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ":prompt_id", "archive", ""]
+            },
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"action\": \"unarchive\"}"
+            },
+            "description": "Unarchive a prompt"
+          },
+          "response": []
+        },
+        {
+          "name": "Create New Version",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/:prompt_id/versions/",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ":prompt_id", "versions", ""]
+            },
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"version\": \"1.1.0\", \"content_text\": \"Updated content\", \"changelog\": \"Improved handling\", \"created_by\": \"admin\"}"
+            },
+            "description": "Create a new version of the prompt"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Version History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/:prompt_id/versions/",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ":prompt_id", "versions", ""]
+            },
+            "description": "Get version history of a prompt"
+          },
+          "response": []
+        },
+        {
+          "name": "Record Usage",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/prompts/:prompt_id/usage/",
+              "host": ["{{baseUrl}}"],
+              "path": ["prompts", ":prompt_id", "usage", ""]
+            },
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"generation_time\": 2.5, \"cost\": 0.05}"
+            },
+            "description": "Record usage statistics for a prompt"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Metadata",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/categories/",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories", ""]
+            },
+            "description": "Get list of all valid categories"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Tags",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tags/",
+              "host": ["{{baseUrl}}"],
+              "path": ["tags", ""]
+            },
+            "description": "Get list of all unique tags used in prompts"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
