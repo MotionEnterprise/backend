@@ -16,6 +16,8 @@ def webhook(request):
 
     data = json.loads(request.body)
 
+    print(f'json request - ', data)
+
     try:
 
         key = data.get("data", {}).get("key", {})
