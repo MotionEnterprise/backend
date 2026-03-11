@@ -9,20 +9,23 @@ import logging
 from ..evolution import send_text_message, download_image
 from ..session import store_image_in_gridfs, get_all_jewellery_types, load_session
 from ..constants import build_jewellery_options_text
-from ..models import ImageMeta
+from ..models import ImageMeta, WhatsAppSession
 
 logger = logging.getLogger(__name__)
 
 
-def handle_idle(session, message) -> None:
+def handle_idle(session, message) -> WhatsAppSession:
     """
     Handle messages in the idle state.
     
     Expected: User sends an image to start the flow.
     
     Args:
-        session: The WhatsAppSession
+        session: The WhatsAppSession (may be newly created)
         message: The parsed IncomingMessage
+        
+    Returns:
+        WhatsAppSession: The session object
     """
     # Only accept images in idle state
     if message.type != "image":
@@ -30,7 +33,7 @@ def handle_idle(session, message) -> None:
             message.sender,
             "Please send a jewellery image to get started."
         )
-        return
+        return session
     
     # Download the image
     image_bytes = download_image(message.image_url)
@@ -39,7 +42,7 @@ def handle_idle(session, message) -> None:
             message.sender,
             "Sorry, couldn't process your image. Try again."
         )
-        return
+        return session
     
     # Store in GridFS
     try:
@@ -54,11 +57,11 @@ def handle_idle(session, message) -> None:
             message.sender,
             "Sorry, couldn't process your image. Try again."
         )
-        return
+        return session
     
-    # Create new session (this will deactivate previous sessions)
-    # Note: session passed in might be old, so we create fresh one
-    session = load_session(message.sender, create_new=True)
+    # If session passed is not new (activeSession=False), create new one
+    if not session.activeSession:
+        session = load_session(message.sender, create_new=True)
     
     # Update session
     session.image = ImageMeta(
@@ -78,3 +81,4 @@ def handle_idle(session, message) -> None:
     )
     
     logger.info(f"Sent jewellery type question to {message.sender}")
+    return session

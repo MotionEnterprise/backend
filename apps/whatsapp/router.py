@@ -19,9 +19,12 @@ from .handlers import (
 logger = logging.getLogger(__name__)
 
 
-def route(session, message) -> None:
+def route(session, message) -> any:
     """
     Route message to appropriate handler based on session state.
+    
+    Returns:
+        WhatsAppSession: The session object (may be new if created)
     
     States:
     - idle: User needs to send an image
@@ -39,26 +42,30 @@ def route(session, message) -> None:
     
     if state == "idle":
         # For idle state, always create new session when user sends image
-        handle_idle(session, message)
+        return handle_idle(session, message)
     
     elif state == "awaiting_jewellery_type":
         handle_jewellery_type(session, message)
+        return session
     
     elif state == "awaiting_image_type":
         handle_image_type(session, message)
+        return session
     
     elif state == "awaiting_dynamic":
         handle_dynamic(session, message)
+        return session
     
     elif state == "generating":
         handle_generating(session, message)
+        return session
     
     elif state == "completed":
-        handle_completed(session, message)
+        return handle_completed(session, message)
     
     elif state == "ready_for_generation":
         # Treat same as completed
-        handle_completed(session, message)
+        return handle_completed(session, message)
     
     else:
         # Unknown state - create new session and start fresh
@@ -71,10 +78,10 @@ def route(session, message) -> None:
         
         # Create new session
         new_session = load_session(message.sender, create_new=True)
-        handle_idle(new_session, message)
+        return handle_idle(new_session, message)
 
 
-def handle_completed(session, message) -> None:
+def handle_completed(session, message) -> any:
     """
     Handle messages when session is in completed state.
     
@@ -90,10 +97,11 @@ def handle_completed(session, message) -> None:
         session.activeSession = False
         session.save()
         
-        handle_idle(new_session, message)
+        return handle_idle(new_session, message)
     else:
         # Tell user to start fresh or regenerate
         send_text_message(
             message.sender,
             "Send a new jewellery image to start. Reply REDO to regenerate."
         )
+        return session

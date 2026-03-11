@@ -194,7 +194,7 @@ def get_prompt_document(category: str, image_type: str) -> Optional[Dict[str, An
     from core.database import get_library_collection
     
     # Construct prompt_id
-    prompt_id = f"{category}_{image_type}"
+    prompt_id = f"{category}-{image_type}"
     
     try:
         prompts_collection = get_library_collection("prompts")

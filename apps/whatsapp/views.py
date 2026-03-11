@@ -49,7 +49,7 @@ class WhatsAppWebhookView(APIView):
             
             logger.info(f"Received {message.type} from {message.sender}")
             
-            # Step 2: Load session
+            # Step 2: Load session (don't create new here, let handlers do it)
             session = load_session(message.sender)
             
             # Step 3: Handle interrupts (STOP, REDO, new image)
@@ -58,10 +58,12 @@ class WhatsAppWebhookView(APIView):
                 return Response(status=200)
             
             # Step 4: Route to appropriate handler
-            route(session, message)
+            # This may create a NEW session for fresh flows
+            session = route(session, message)
             
-            # Step 5: Save session
-            save_session(session)
+            # Step 5: Save session (the one returned from route)
+            if session:
+                save_session(session)
             
         except Exception as e:
             # Log error but still return 200 to prevent webhook retries
