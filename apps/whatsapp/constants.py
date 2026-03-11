@@ -3,13 +3,6 @@ Jewellery Type Constants
 
 This file maps jewellery types to their categories and human parts.
 Used for the WhatsApp conversation flow.
-
-Structure:
-- id: Unique identifier for the jewellery type
-- label: Display label shown to user
-- option: Single letter option for user selection (A, B, C, etc.)
-- category: Parent category (hand, neck, ear, etc.)
-- human_part: The body part where this jewellery is worn
 """
 
 # List of all jewellery types with their mappings

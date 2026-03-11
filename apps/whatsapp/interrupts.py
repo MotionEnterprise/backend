@@ -7,7 +7,7 @@ Handles special commands (STOP, REDO) and new image during flow.
 import logging
 
 from .evolution import send_text_message, download_image
-from .session import store_image_in_gridfs, trigger_generation
+from .session import store_image_in_gridfs, trigger_generation, load_session
 from .models import ImageMeta
 
 logger = logging.getLogger(__name__)
@@ -34,12 +34,15 @@ def handle_interrupt(session, message) -> bool:
         text_upper = message.text.strip().upper()
         
         if text_upper == "STOP":
-            session.reset()
+            # Deactivate current session
+            session.activeSession = False
+            session.save()
+            
             send_text_message(
                 message.sender,
                 "Flow cancelled. Send a new jewellery image to start again."
             )
-            logger.info(f"Session reset for {message.sender}")
+            logger.info(f"Session deactivated for {message.sender}")
             return True
         
         # Check for REDO

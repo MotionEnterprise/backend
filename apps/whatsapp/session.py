@@ -1,7 +1,7 @@
 """
 WhatsApp Session Management
 
-Functions for loading, saving, and querying WhatsApp sessions and related data.
+Functions for loading, saving, and querying WhatsApp sessions.
 """
 
 import logging
@@ -79,14 +79,16 @@ def _get_gridfs():
     return _gridfs
 
 
-def load_session(whatsapp_number: str) -> WhatsAppSession:
+def load_session(whatsapp_number: str, create_new: bool = False) -> WhatsAppSession:
     """
     Load a WhatsApp session by phone number.
     
-    If not found, returns a new unsaved WhatsAppSession with defaults.
+    If create_new=True, creates a new session document and deactivates previous ones.
+    If create_new=False, finds the active session or returns new unsaved one.
     
     Args:
         whatsapp_number: The user's WhatsApp number
+        create_new: If True, create new session and deactivate old ones
         
     Returns:
         WhatsAppSession: Existing or new session object
@@ -94,12 +96,30 @@ def load_session(whatsapp_number: str) -> WhatsAppSession:
     # Ensure database connection is initialized
     _get_dev_db()
     
-    # Try to find existing session
-    session = WhatsAppSession.objects(whatsapp_number=whatsapp_number).first()
+    if create_new:
+        # Deactivate all previous sessions for this number
+        WhatsAppSession.objects(
+            whatsapp_number=whatsapp_number,
+            activeSession=True
+        ).update(set__activeSession=False)
+        
+        # Create new session
+        session = WhatsAppSession(
+            whatsapp_number=whatsapp_number,
+            activeSession=True
+        )
+        logger.info(f"Created new session for {whatsapp_number}")
+        return session
+    
+    # Try to find active session
+    session = WhatsAppSession.objects(
+        whatsapp_number=whatsapp_number,
+        activeSession=True
+    ).first()
     
     if session is None:
         # Create new session (not saved yet)
-        session = WhatsAppSession(whatsapp_number=whatsapp_number)
+        session = WhatsAppSession(whatsapp_number=whatsapp_number, activeSession=True)
         logger.info(f"Created new session for {whatsapp_number}")
     
     return session
@@ -115,6 +135,21 @@ def save_session(session: WhatsAppSession) -> None:
     session.touch()
     session.save()
     logger.debug(f"Saved session for {session.whatsapp_number}")
+
+
+def complete_session(session: WhatsAppSession) -> None:
+    """
+    Mark a session as completed.
+    Sets activeSession=False and completed_at=now.
+    
+    Args:
+        session: The WhatsAppSession to complete
+    """
+    session.activeSession = False
+    session.completed_at = datetime.utcnow()
+    session.touch()
+    session.save()
+    logger.info(f"Completed session for {session.whatsapp_number}")
 
 
 def get_all_jewellery_types() -> List[Dict[str, Any]]:
@@ -160,7 +195,6 @@ def get_prompt_document(category: str, image_type: str) -> Optional[Dict[str, An
     
     # Construct prompt_id
     prompt_id = f"{category}_{image_type}"
-    print(f'prompt_id - ', prompt_id)
     
     try:
         prompts_collection = get_library_collection("prompts")

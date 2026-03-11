@@ -55,15 +55,16 @@ def handle_jewellery_type(session, message) -> None:
     # Get human_part for Q2
     human_part = jewellery_type_doc.get("human_part", "")
     
-    # Build Q2 with human_part if available
-    options_text = build_image_type_options_text(jewellery_type_doc)
-    
-    q2_text = "What kind of image are you looking for?\n\n"
+    # Build Q2 with all three options
     if human_part:
-        q2_text += f"A. Plain background\n"
-        q2_text += f"B. On human ({human_part})\n"
+        q2_text = (
+            "What kind of image are you looking for?\n\n"
+            "A. Plain background\n"
+            "B. On human ({human_part})\n"
+            "C. Aesthetic background"
+        ).format(human_part=human_part)
     else:
-        q2_text += options_text
+        q2_text = build_image_type_options_text(jewellery_type_doc)
     
     send_text_message(message.sender, q2_text)
     

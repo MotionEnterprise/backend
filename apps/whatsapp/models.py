@@ -30,29 +30,31 @@ class ImageMeta(EmbeddedDocument):
 class WhatsAppSession(Document):
     """
     Document for storing WhatsApp user session state.
+    Each session (flow) creates a new document.
+    activeSession = true indicates the current active flow.
     """
     meta = {
         'collection': 'whatsapp_sessions',
         'db_alias': 'dev',
         'indexes': [
-            {'fields': ['whatsapp_number'], 'unique': True},
+            {'fields': ['whatsapp_number', 'activeSession']},
             'state',
             'last_active',
         ]
     }
 
-    # Required fields
-    whatsapp_number = StringField(required=True, unique=True)
-    state = StringField(required=True, default="idle")
+    # Identification
+    whatsapp_number = StringField(required=True)
+    activeSession = BooleanField(default=True)  # true for current, false for completed
     
-    # Image fields
+    # Image
     image = EmbeddedDocumentField(ImageMeta, null=True, default=None)
     pending_image = EmbeddedDocumentField(ImageMeta, null=True, default=None)
     
     # Jewellery and prompt fields
-    jewellery_type = StringField(null=True, default=None)  # e.g., "ring", "bangle"
-    category = StringField(null=True, default=None)  # e.g., "hand", "neck", "ear"
-    image_type = StringField(null=True, default=None)  # e.g., "plain", "human", "aesthetic"
+    jewellery_type = StringField(null=True, default=None)
+    category = StringField(null=True, default=None)
+    image_type = StringField(null=True, default=None)
     prompt_document = DictField(null=True, default=None)
     
     # Dynamic fields tracking
@@ -66,9 +68,13 @@ class WhatsAppSession(Document):
     retry_count = IntField(default=0)
     reminder_sent = BooleanField(default=False)
     
+    # State
+    state = StringField(required=True, default="idle")
+    
     # Timestamps
     created_at = DateTimeField(default=datetime.utcnow)
     last_active = DateTimeField(default=datetime.utcnow)
+    completed_at = DateTimeField(null=True, default=None)
 
     def reset(self):
         """
@@ -98,10 +104,10 @@ class WhatsAppSession(Document):
     @property
     def dynamic_fields(self):
         """
-        Get sorted list of dynamic fields from prompt_document.
+        Get sorted list of dynamic fields from prompt_document where required=True.
         
         Returns:
-            list: Sorted list of dynamic field dicts with 'order' key
+            list: Sorted list of required dynamic field dicts
         """
         if self.prompt_document is None:
             return []
@@ -110,8 +116,9 @@ class WhatsAppSession(Document):
             content = self.prompt_document.get("content", {})
             expected_input = content.get("expected_input_vars", {})
             fields = expected_input.get("dynamic_fields", [])
-            # Sort by order key
-            return sorted(fields, key=lambda x: x.get("order", 0))
+            # Filter to only required fields and sort by order
+            required_fields = [f for f in fields if f.get("required", True)]
+            return sorted(required_fields, key=lambda x: x.get("order", 0))
         except (AttributeError, KeyError, TypeError):
             return []
 
@@ -140,4 +147,4 @@ class WhatsAppSession(Document):
         return self.current_field_index >= len(fields)
 
     def __str__(self):
-        return f"<WhatsAppSession {self.whatsapp_number} [{self.state}]>"
+        return f"<WhatsAppSession {self.whatsapp_number} [{self.state}] active={self.activeSession}>"

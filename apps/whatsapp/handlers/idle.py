@@ -7,7 +7,7 @@ Handles the initial state when a user sends an image.
 import logging
 
 from ..evolution import send_text_message, download_image
-from ..session import store_image_in_gridfs, get_all_jewellery_types, get_jewellery_type_by_option
+from ..session import store_image_in_gridfs, get_all_jewellery_types, load_session
 from ..constants import build_jewellery_options_text
 from ..models import ImageMeta
 
@@ -56,12 +56,17 @@ def handle_idle(session, message) -> None:
         )
         return
     
+    # Create new session (this will deactivate previous sessions)
+    # Note: session passed in might be old, so we create fresh one
+    session = load_session(message.sender, create_new=True)
+    
     # Update session
     session.image = ImageMeta(
         gridfs_file_id=file_id,
         mimetype=message.mimetype or "image/jpeg"
     )
     session.state = "awaiting_jewellery_type"
+    session.activeSession = True
     
     # Build and send Q1
     jewellery_types = get_all_jewellery_types()

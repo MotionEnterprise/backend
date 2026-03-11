@@ -7,6 +7,7 @@ Routes messages to appropriate handlers based on session state.
 import logging
 
 from .evolution import send_text_message
+from .session import load_session
 from .handlers import (
     handle_idle,
     handle_jewellery_type,
@@ -37,6 +38,7 @@ def route(session, message) -> None:
     state = session.state
     
     if state == "idle":
+        # For idle state, always create new session when user sends image
         handle_idle(session, message)
     
     elif state == "awaiting_jewellery_type":
@@ -59,13 +61,17 @@ def route(session, message) -> None:
         handle_completed(session, message)
     
     else:
-        # Unknown state - reset and start fresh
-        logger.warning(f"Unknown state '{state}' for {message.sender}, resetting")
-        session.reset()
-        send_text_message(
-            message.sender,
-            "Something went wrong. Please send a jewellery image to start fresh."
-        )
+        # Unknown state - create new session and start fresh
+        logger.warning(f"Unknown state '{state}' for {message.sender}, creating new session")
+        
+        # Deactivate old session if exists
+        if session.activeSession:
+            session.activeSession = False
+            session.save()
+        
+        # Create new session
+        new_session = load_session(message.sender, create_new=True)
+        handle_idle(new_session, message)
 
 
 def handle_completed(session, message) -> None:
@@ -77,9 +83,14 @@ def handle_completed(session, message) -> None:
         message: The parsed IncomingMessage
     """
     if message.type == "image":
-        # Start new flow with new image
-        session.state = "idle"
-        handle_idle(session, message)
+        # Start new flow with new image - create new session
+        new_session = load_session(message.sender, create_new=True)
+        
+        # Deactivate old completed session
+        session.activeSession = False
+        session.save()
+        
+        handle_idle(new_session, message)
     else:
         # Tell user to start fresh or regenerate
         send_text_message(
