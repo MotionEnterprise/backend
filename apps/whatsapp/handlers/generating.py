@@ -11,8 +11,6 @@ def handle_generating(session, message) -> None:
     """
     Handle messages in the generating state.
     
-    Expected: User may ask about status or cancel.
-    
     Args:
         session: The WhatsAppSession
         message: The parsed IncomingMessage
@@ -23,3 +21,20 @@ def handle_generating(session, message) -> None:
         "Still working on your image, please wait...\n"
         "Reply STOP to cancel."
     )
+
+
+def send_generation_complete_message(whatsapp_number: str) -> None:
+    """
+    Send confirmation message after generation is complete.
+    
+    This is called when the generated image is ready to be sent.
+    
+    Args:
+        whatsapp_number: The user's WhatsApp number
+    """
+    message = (
+        "Your image is ready!\n\n"
+        "Not satisfied? Send REDO to try again.\n"
+        "Happy? Send a new image to start fresh."
+    )
+    send_text_message(whatsapp_number, message)

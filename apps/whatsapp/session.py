@@ -5,6 +5,7 @@ Functions for loading, saving, and querying WhatsApp sessions.
 """
 
 import logging
+import os
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from bson import ObjectId
@@ -239,13 +240,86 @@ def store_image_in_gridfs(image_bytes: bytes, sender: str, mimetype: str) -> Obj
 
 def trigger_generation(session: WhatsAppSession) -> None:
     """
-    Stub function for triggering ComfyUI generation.
+    Placeholder function for triggering image generation.
     
-    This is a placeholder - actual implementation is out of scope.
+    This sends a placeholder image to complete the flow for testing.
+    When ComfyUI is integrated, replace this entire function.
+    
+    Flow:
+    1. Set session state to "generating"
+    2. Send placeholder image to user
+    3. Set session state to "completed"
+    4. Send completion confirmation with REDO instructions
+    
+    TODO (ComfyUI Integration):
+    - Replace this function with actual ComfyUI API call
+    - The ComfyUI workflow should:
+      1. Take session.image as input
+      2. Use session.final_prompt for generation
+      3. Return the generated image
+    - After ComfyUI generates:
+      - Send the generated image to user
+      - Set session state to "completed"
+      - Send completion message
     
     Args:
         session: The WhatsAppSession with all collected data
     """
-    logger.info(f"Trigger generation called for {session.whatsapp_number} - STUB")
-    # TODO: Implement actual ComfyUI integration
-    pass
+    from .evolution import send_media_message, send_text_message
+    from .handlers.generating import send_generation_complete_message
+    
+    logger.info(f"Trigger generation called for {session.whatsapp_number} - PLACEHOLDER")
+    
+    # Set state to generating
+    session.state = "generating"
+    save_session(session)
+    
+    # =========================================================================
+    # PLACEHOLDER: Send sample image for testing
+    # =========================================================================
+    # TODO: Replace this with actual ComfyUI generation
+    
+    # Get path to placeholder image
+    placeholder_image_path = os.path.join(
+        os.path.dirname(__file__),
+        "images",
+        "gold.jpg"
+    )
+    
+    # Check if file exists
+    if os.path.exists(placeholder_image_path):
+        try:
+            # Send the placeholder image
+            send_media_message(
+                session.whatsapp_number,
+                placeholder_image_path,
+                f"Generated for {session.jewellery_type} - {session.image_type}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to send placeholder image: {str(e)}")
+            # Fallback to text message
+            send_text_message(
+                session.whatsapp_number,
+                f"[Placeholder] Generated image for {session.jewellery_type} ({session.image_type})"
+            )
+    else:
+        # Fallback if image not found
+        send_text_message(
+            session.whatsapp_number,
+            f"[Placeholder] Generated image for {session.jewellery_type} ({session.image_type})"
+        )
+    
+    # =========================================================================
+    # END PLACEHOLDER
+    # =========================================================================
+    
+    # Mark session as completed
+    session.state = "completed"
+    session.completed_at = datetime.utcnow()
+    session.activeSession = False
+    save_session(session)
+    
+    # Send completion message with REDO instructions
+    send_generation_complete_message(session.whatsapp_number)
+    
+    logger.info(f"Generation completed for {session.whatsapp_number}")

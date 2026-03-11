@@ -7,7 +7,8 @@ Handles special commands (STOP, REDO) and new image during flow.
 import logging
 
 from .evolution import send_text_message, download_image
-from .session import store_image_in_gridfs, trigger_generation, load_session
+from .session import store_image_in_gridfs, save_session
+from .handlers.redo import send_redo_choice_message
 from .models import ImageMeta
 
 logger = logging.getLogger(__name__)
@@ -19,11 +20,14 @@ def handle_interrupt(session, message) -> bool:
     
     Checks in order:
     1. STOP - cancel current flow
-    2. REDO - regenerate with previous inputs
+    2. REDO - ask user for choice (same or change)
     3. New image mid-flow - store as pending
     
+    The session passed here should already be the correct one
+    (either active session or most recent completed session).
+    
     Args:
-        session: The WhatsAppSession
+        session: The WhatsAppSession (should already be found correctly)
         message: The parsed IncomingMessage
         
     Returns:
@@ -34,42 +38,56 @@ def handle_interrupt(session, message) -> bool:
         text_upper = message.text.strip().upper()
         
         if text_upper == "STOP":
-            # Deactivate current session
-            session.activeSession = False
-            session.save()
+            if session and session.activeSession:
+                session.activeSession = False
+                save_session(session)
             
             send_text_message(
                 message.sender,
                 "Flow cancelled. Send a new jewellery image to start again."
             )
-            logger.info(f"Session deactivated for {message.sender}")
+            logger.info(f"STOP command processed for {message.sender}")
             return True
         
         # Check for REDO
         if text_upper == "REDO":
-            if session.state == "completed":
-                session.state = "generating"
-                session.retry_count = 0
-                send_text_message(
-                    message.sender,
-                    "Regenerating with your previous inputs..."
-                )
-                trigger_generation(session)
-            else:
+            # Session should already be the right one (found in views.py)
+            # Just verify it's a valid state for REDO
+            if session and (session.state == "completed" or session.state == "generating"):
+                # Mark state as awaiting redo choice
+                session.state = "awaiting_redo_choice"
+                session.activeSession = True  # Reactivate for redo flow
+                save_session(session)
+                
+                # Ask user for choice
+                send_redo_choice_message(message.sender)
+                
+                logger.info(f"REDO choice asked for {message.sender}")
+                return True
+            elif session is None:
+                # No session found - tell user to start fresh
                 send_text_message(
                     message.sender,
                     "Nothing to regenerate yet. Send a jewellery image to start."
                 )
-            return True
+                return True
+            else:
+                # Session exists but not in completed/generating state
+                send_text_message(
+                    message.sender,
+                    "Nothing to regenerate yet. Send a jewellery image to start."
+                )
+                return True
     
     # Check for new image mid-flow
-    if message.type == "image":
+    if message.type == "image" and session:
         # States where we should NOT accept new image
-        if session.state not in ("idle", "completed", "generating", "ready_for_generation"):
+        if session.state not in ("idle", "completed", "generating", "ready_for_generation", "awaiting_redo_choice"):
             # Download and store the new image
             image_bytes = download_image(message.image_url)
             if image_bytes is not None:
                 try:
+                    from .session import store_image_in_gridfs
                     file_id = store_image_in_gridfs(
                         image_bytes,
                         message.sender,
@@ -79,6 +97,7 @@ def handle_interrupt(session, message) -> bool:
                         gridfs_file_id=file_id,
                         mimetype=message.mimetype or "image/jpeg"
                     )
+                    save_session(session)
                     send_text_message(
                         message.sender,
                         "You have an ongoing flow. Reply STOP to cancel and start "
@@ -89,6 +108,11 @@ def handle_interrupt(session, message) -> bool:
                     return True
                 except Exception as e:
                     logger.error(f"Failed to store pending image: {str(e)}")
+    
+    # For completed state receiving image - let router handle it
+    if session and session.state == "completed" and message.type == "image":
+        # Don't handle here, let router handle starting new session
+        return False
     
     # No interrupt matched
     return False

@@ -14,6 +14,7 @@ from .handlers import (
     handle_image_type,
     handle_dynamic,
     handle_generating,
+    handle_redo_choice,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ def route(session, message) -> any:
     - awaiting_dynamic: User needs to answer dynamic questions
     - generating: Image is being generated
     - completed: User has completed the flow
+    - awaiting_redo_choice: User selected REDO, needs to choose option
     
     Args:
         session: The WhatsAppSession
@@ -59,6 +61,9 @@ def route(session, message) -> any:
     elif state == "generating":
         handle_generating(session, message)
         return session
+    
+    elif state == "awaiting_redo_choice":
+        return handle_redo_choice(session, message)
     
     elif state == "completed":
         return handle_completed(session, message)
