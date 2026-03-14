@@ -26,4 +26,7 @@ urlpatterns = [
     
     # Library app API endpoints
     path('api/library/', include('apps.library.urls')),
+    
+    # ComfyUI API endpoints
+    path('comfyui/', include('apps.comfyui.urls')),
 ]

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     # Third-party apps
     'rest_framework',
     'corsheaders',
+    'channels',
     
     # Local apps
     'apps.accounts',
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     'apps.generation',
     'apps.media',
     'apps.whatsapp',
+    'apps.comfyui',
 ]
 
 MIDDLEWARE = [
@@ -153,3 +155,28 @@ REST_FRAMEWORK = {
 import os
 from dotenv import load_dotenv
 load_dotenv()
+
+
+# ── ASGI / Channels ────────────────────────────────────────────────────────────
+ASGI_APPLICATION = "config.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [("127.0.0.1", 6379)]},  # adjust if Redis is remote
+    }
+}
+
+
+# ── ComfyUI ───────────────────────────────────────────────────────────────────
+COMFYUI_HOST = os.getenv("COMFYUI_HOST", "127.0.0.1")
+COMFYUI_PORT = int(os.getenv("COMFYUI_PORT", "8188"))
+COMFYUI_PROTOCOL = os.getenv("COMFYUI_PROTOCOL", "http")
+COMFYUI_WS_PROTOCOL = os.getenv("COMFYUI_WS_PROTOCOL", "ws")
+COMFYUI_WS_TIMEOUT = int(os.getenv("COMFYUI_WS_TIMEOUT", "600"))
+COMFYUI_REQUEST_TIMEOUT = int(os.getenv("COMFYUI_REQUEST_TIMEOUT", "30"))
+COMFYUI_API_KEY = os.getenv("COMFYUI_API_KEY", None)
+
+
+# ── DRF Exception Handler ──────────────────────────────────────────────────────
+REST_FRAMEWORK["EXCEPTION_HANDLER"] = "apps.comfyui.errors.comfy_exception_handler"
