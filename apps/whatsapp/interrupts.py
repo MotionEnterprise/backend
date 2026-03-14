@@ -7,9 +7,10 @@ Handles special commands (STOP, REDO) and new image during flow.
 import logging
 
 from .evolution import send_text_message, download_image
-from .session import store_image_in_gridfs, save_session
+from .session import store_image_in_supabase, save_session
 from .handlers.redo import send_redo_choice_message
 from .models import ImageMeta
+from apps.media.supabase_storage import UPLOADED_MEDIA_BUCKET
 
 logger = logging.getLogger(__name__)
 
@@ -83,18 +84,18 @@ def handle_interrupt(session, message) -> bool:
     if message.type == "image" and session:
         # States where we should NOT accept new image
         if session.state not in ("idle", "completed", "generating", "ready_for_generation", "awaiting_redo_choice"):
-            # Download and store the new image
-            image_bytes = download_image(message.image_url)
+            # Download and store the new image (pass message_key_id to get base64 from Evolution API)
+            image_bytes = download_image(message.image_url, message.message_key_id)
             if image_bytes is not None:
                 try:
-                    from .session import store_image_in_gridfs
-                    file_id = store_image_in_gridfs(
+                    file_path = store_image_in_supabase(
                         image_bytes,
                         message.sender,
                         message.mimetype or "image/jpeg"
                     )
                     session.pending_image = ImageMeta(
-                        gridfs_file_id=file_id,
+                        file_path=file_path,
+                        bucket_name=UPLOADED_MEDIA_BUCKET,
                         mimetype=message.mimetype or "image/jpeg"
                     )
                     save_session(session)

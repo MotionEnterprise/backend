@@ -8,10 +8,8 @@ import logging
 import os
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from bson import ObjectId
 
 from mongoengine import connect
-from gridfs import GridFS
 
 from .models import WhatsAppSession, ImageMeta
 
@@ -206,120 +204,73 @@ def get_prompt_document(category: str, image_type: str) -> Optional[Dict[str, An
         return None
 
 
-def store_image_in_gridfs(image_bytes: bytes, sender: str, mimetype: str) -> ObjectId:
+def store_image_in_supabase(image_bytes: bytes, sender: str, mimetype: str) -> str:
     """
-    Store an image in GridFS.
+    Store an image in Supabase Storage.
     
     Args:
         image_bytes: Raw image bytes
-        sender: Sender's WhatsApp number (for filename)
+        sender: Sender's WhatsApp number (for folder organization)
         mimetype: Image MIME type
         
     Returns:
-        ObjectId: The GridFS file ID
+        str: The file path in Supabase
     """
-    from core.database import get_assets_db_connection
+    from apps.media.supabase_storage import save_uploaded_image
     
-    db = get_assets_db_connection()
-    gridfs = GridFS(db)
+    # Preserve original extension from mimetype
+    ext = mimetype.split("/")[-1] if "/" in mimetype else "jpg"
+    filename = f"upload.{ext}"
     
-    # Generate filename
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-    filename = f"{sender}_{timestamp}.jpg"
-    
-    # Store in GridFS
-    file_id = gridfs.put(
-        image_bytes,
+    # Save to Supabase
+    file_path = save_uploaded_image(
+        file_bytes=image_bytes,
+        phone_number=sender,
         filename=filename,
-        content_type=mimetype
+        content_type=mimetype,
     )
     
-    logger.info(f"Stored image in GridFS: {filename} (id: {file_id})")
-    return file_id
+    logger.info(f"Stored image in Supabase: {file_path}")
+    return file_path
+
+
+# Backward compatibility alias
+store_image_in_gridfs = store_image_in_supabase
 
 
 def trigger_generation(session: WhatsAppSession) -> None:
     """
-    Placeholder function for triggering image generation.
-    
-    This sends a placeholder image to complete the flow for testing.
-    When ComfyUI is integrated, replace this entire function.
-    
-    Flow:
-    1. Set session state to "generating"
-    2. Send placeholder image to user
-    3. Set session state to "completed"
-    4. Send completion confirmation with REDO instructions
-    
-    TODO (ComfyUI Integration):
-    - Replace this function with actual ComfyUI API call
-    - The ComfyUI workflow should:
-      1. Take session.image as input
-      2. Use session.final_prompt for generation
-      3. Return the generated image
-    - After ComfyUI generates:
-      - Send the generated image to user
-      - Set session state to "completed"
-      - Send completion message
-    
+    Trigger ComfyUI image generation via Celery background task.
+
+    Sets session to "generating" state and queues the async Celery task
+    that handles the full pipeline:
+      Supabase image → ComfyUI upload → workflow run → download result
+      → store in Supabase → send via WhatsApp → update session
+
     Args:
         session: The WhatsAppSession with all collected data
+                 (image, final_prompt, jewellery_type, image_type set)
     """
-    from .evolution import send_media_message, send_text_message
-    from .handlers.generating import send_generation_complete_message
-    
-    logger.info(f"Trigger generation called for {session.whatsapp_number} - PLACEHOLDER")
-    
+    from .evolution import send_text_message
+    from .tasks import run_whatsapp_generation
+
+    logger.info(f"Triggering ComfyUI generation for {session.whatsapp_number}")
+
     # Set state to generating
     session.state = "generating"
     save_session(session)
-    
-    # =========================================================================
-    # PLACEHOLDER: Send sample image for testing
-    # =========================================================================
-    # TODO: Replace this with actual ComfyUI generation
-    
-    # Get path to placeholder image
-    placeholder_image_path = os.path.join(
-        os.path.dirname(__file__),
-        "images",
-        "gold.jpg"
+
+    # Send processing message to user
+    send_text_message(
+        session.whatsapp_number,
+        "⏳ Your image is being generated... This takes about 30-60 seconds.\n\n"
+        "☕ Sit back while our AI works its magic!\n"
+        "Reply STOP to cancel."
     )
-    
-    # Check if file exists
-    if os.path.exists(placeholder_image_path):
-        try:
-            # Send the placeholder image
-            send_media_message(
-                session.whatsapp_number,
-                placeholder_image_path,
-                f"Generated for {session.jewellery_type} - {session.image_type}"
-            )
-        except Exception as e:
-            logger.error(f"Failed to send placeholder image: {str(e)}")
-            # Fallback to text message
-            send_text_message(
-                session.whatsapp_number,
-                f"[Placeholder] Generated image for {session.jewellery_type} ({session.image_type})"
-            )
-    else:
-        # Fallback if image not found
-        send_text_message(
-            session.whatsapp_number,
-            f"[Placeholder] Generated image for {session.jewellery_type} ({session.image_type})"
-        )
-    
-    # =========================================================================
-    # END PLACEHOLDER
-    # =========================================================================
-    
-    # Mark session as completed
-    session.state = "completed"
-    session.completed_at = datetime.utcnow()
-    session.activeSession = False
-    save_session(session)
-    
-    # Send completion message with REDO instructions
-    send_generation_complete_message(session.whatsapp_number)
-    
-    logger.info(f"Generation completed for {session.whatsapp_number}")
+
+    # Queue the Celery background task
+    # The task handles everything: ComfyUI upload, generation, delivery, DB update
+    run_whatsapp_generation.delay(session_id=str(session.id))
+
+    logger.info(f"Queued generation task for {session.whatsapp_number}")
+

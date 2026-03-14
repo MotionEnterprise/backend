@@ -141,21 +141,28 @@ def run_comfyui_workflow(self, job_id: str, workflow: dict, input_files: list = 
                 )
             )
             
-            # Save to Media App (GridFS) — adjust to your Media App's API
-            # This is a placeholder - will be wired up in Step 14
+            # Save to Media App (Supabase)
             try:
-                from apps.media.storage import save_to_gridfs
-                gridfs_id = save_to_gridfs(
+                from apps.media.supabase_storage import save_generated_image, GENERATED_MEDIA_BUCKET
+                
+                # For ComfyUI jobs, we need a phone number for organization
+                # Use job_id as a fallback identifier
+                phone_number = f"job_{job_id[:8]}" if job_id else "unknown"
+                
+                file_path = save_generated_image(
                     file_bytes=file_bytes,
-                    filename=file_info["filename"],
+                    phone_number=phone_number,
                     content_type=file_info["content_type"],
-                    metadata={"job_id": job_id, "prompt_id": prompt_id},
                 )
-                saved_files.append({**file_info, "gridfs_id": str(gridfs_id)})
+                saved_files.append({
+                    **file_info, 
+                    "file_path": file_path,
+                    "bucket_name": GENERATED_MEDIA_BUCKET
+                })
             except ImportError:
                 # Media app storage not available yet - store raw file info
-                logger.warning(f"[ComfyJob {job_id}] Media app not available, storing file info without GridFS")
-                saved_files.append({**file_info, "gridfs_id": None})
+                logger.warning(f"[ComfyJob {job_id}] Media app not available, storing file info without Supabase")
+                saved_files.append({**file_info, "file_path": None, "bucket_name": None})
 
         # Step 5: Mark complete
         job.status = ComfyJob.Status.COMPLETE

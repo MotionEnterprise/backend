@@ -7,9 +7,10 @@ Handles the initial state when a user sends an image.
 import logging
 
 from ..evolution import send_text_message, download_image
-from ..session import store_image_in_gridfs, get_all_jewellery_types, load_session
+from ..session import store_image_in_supabase, get_all_jewellery_types, load_session
 from ..constants import build_jewellery_options_text
 from ..models import ImageMeta, WhatsAppSession
+from apps.media.supabase_storage import UPLOADED_MEDIA_BUCKET
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +36,8 @@ def handle_idle(session, message) -> WhatsAppSession:
         )
         return session
     
-    # Download the image
-    image_bytes = download_image(message.image_url)
+    # Download the image (pass message_key_id to get base64 from Evolution API)
+    image_bytes = download_image(message.image_url, message.message_key_id)
     if image_bytes is None:
         send_text_message(
             message.sender,
@@ -44,15 +45,15 @@ def handle_idle(session, message) -> WhatsAppSession:
         )
         return session
     
-    # Store in GridFS
+    # Store in Supabase
     try:
-        file_id = store_image_in_gridfs(
+        file_path = store_image_in_supabase(
             image_bytes,
             message.sender,
             message.mimetype or "image/jpeg"
         )
     except Exception as e:
-        logger.error(f"Failed to store image in GridFS: {str(e)}")
+        logger.error(f"Failed to store image in Supabase: {str(e)}")
         send_text_message(
             message.sender,
             "Sorry, couldn't process your image. Try again."
@@ -65,7 +66,8 @@ def handle_idle(session, message) -> WhatsAppSession:
     
     # Update session
     session.image = ImageMeta(
-        gridfs_file_id=file_id,
+        file_path=file_path,
+        bucket_name=UPLOADED_MEDIA_BUCKET,
         mimetype=message.mimetype or "image/jpeg"
     )
     session.state = "awaiting_jewellery_type"

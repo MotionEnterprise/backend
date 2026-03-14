@@ -42,15 +42,21 @@ class ComfyUIConfig:
 
     @property
     def ws_protocol(self) -> str:
-        return getattr(settings, "COMFYUI_WS_PROTOCOL", "ws")
+        # If explicitly set in settings, use that
+        if hasattr(settings, "COMFYUI_WS_PROTOCOL"):
+            val = getattr(settings, "COMFYUI_WS_PROTOCOL")
+            if val in ["ws", "wss"]:
+                return val
+        # Otherwise infer from the HTTP protocol
+        return "wss" if self.protocol == "https" else "ws"
 
     @property
     def base_url(self) -> str:
-        return f"{self.protocol}://{self.host}:{self.port}"
+        return f"{self.protocol}://{self.host}"
 
     @property
     def ws_url(self) -> str:
-        return f"{self.ws_protocol}://{self.host}:{self.port}"
+        return f"{self.ws_protocol}://{self.host}"
 
     @property
     def ws_timeout(self) -> int:

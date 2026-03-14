@@ -4,16 +4,9 @@ services:
 
   django:
     build: .
-    container_name: django_bot
+    container_name: django_bot2
     ports:
       - "8000:8000"
     volumes:
       - .:/app
-    restart: always
-
-  evolution:
-    image: evoapicloud/evolution-api
-    container_name: evolution_api
-    ports:
-      - "8080:8080"
     restart: always

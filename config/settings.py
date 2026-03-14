@@ -178,5 +178,23 @@ COMFYUI_REQUEST_TIMEOUT = int(os.getenv("COMFYUI_REQUEST_TIMEOUT", "30"))
 COMFYUI_API_KEY = os.getenv("COMFYUI_API_KEY", None)
 
 
+# ── Celery ─────────────────────────────────────────────────────────────────────
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+
+
 # ── DRF Exception Handler ──────────────────────────────────────────────────────
 REST_FRAMEWORK["EXCEPTION_HANDLER"] = "apps.comfyui.errors.comfy_exception_handler"
+
+
+# ── Supabase Storage ───────────────────────────────────────────────────────────
+SUPABASE_URL = os.getenv("SUPABASE_URL", None)
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", None)
+
+# Bucket names
+SUPABASE_UPLOADED_MEDIA_BUCKET = os.getenv("SUPABASE_UPLOADED_MEDIA_BUCKET", "uploaded-media")
+SUPABASE_GENERATED_MEDIA_BUCKET = os.getenv("SUPABASE_GENERATED_MEDIA_BUCKET", "generated-media")

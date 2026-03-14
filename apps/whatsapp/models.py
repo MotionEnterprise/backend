@@ -21,10 +21,30 @@ from mongoengine import (
 class ImageMeta(EmbeddedDocument):
     """
     Embedded document for storing image metadata.
+    Uses Supabase storage.
     """
-    gridfs_file_id = ObjectIdField(required=True)
+    # Supabase file path (e.g., "phonenumber/20240315_123045_original.jpg")
+    file_path = StringField(required=True)
+    # Bucket name: "uploaded-media" for user uploads, "generated-media" for AI output
+    bucket_name = StringField(default="uploaded-media")
     mimetype = StringField(default="image/jpeg")
     uploaded_at = DateTimeField(default=datetime.utcnow)
+
+
+class GenerationMeta(EmbeddedDocument):
+    """
+    Embedded document for tracking ComfyUI generation state.
+    Stored inside WhatsAppSession to keep everything together in MongoDB.
+    """
+    comfy_prompt_id = StringField(null=True, default=None)
+    generation_status = StringField(
+        choices=["pending", "running", "completed", "failed"],
+        default="pending",
+    )
+    generated_image = EmbeddedDocumentField(ImageMeta, null=True, default=None)
+    error_message = StringField(null=True, default=None)
+    started_at = DateTimeField(null=True, default=None)
+    completed_at = DateTimeField(null=True, default=None)
 
 
 class WhatsAppSession(Document):
@@ -68,6 +88,9 @@ class WhatsAppSession(Document):
     retry_count = IntField(default=0)
     reminder_sent = BooleanField(default=False)
     
+    # ComfyUI generation tracking
+    generation = EmbeddedDocumentField(GenerationMeta, null=True, default=None)
+    
     # State
     state = StringField(required=True, default="idle")
     
@@ -93,6 +116,7 @@ class WhatsAppSession(Document):
         self.final_prompt = None
         self.retry_count = 0
         self.reminder_sent = False
+        self.generation = None
         self.touch()
 
     def touch(self):

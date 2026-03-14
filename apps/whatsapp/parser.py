@@ -18,6 +18,7 @@ class IncomingMessage:
     text: Optional[str] = None
     image_url: Optional[str] = None
     mimetype: Optional[str] = None
+    message_key_id: Optional[str] = None  # The key.id from message for fetching base64 from Evolution API
 
 
 def parse_evolution_payload(data: dict) -> Optional[IncomingMessage]:
@@ -38,6 +39,8 @@ def parse_evolution_payload(data: dict) -> Optional[IncomingMessage]:
     if event not in ("messages.upsert", "MESSAGES_UPSERT"):
         return None
     
+    # print(f'data - \n{data}')
+
     # Get data payload
     data_payload = data.get("data", {})
     if not data_payload:
@@ -65,15 +68,23 @@ def parse_evolution_payload(data: dict) -> Optional[IncomingMessage]:
     # Check for image message
     if "imageMessage" in message:
         image_msg = message["imageMessage"]
-        image_url = image_msg.get("url")
+        
+        # Get message key ID - needed to fetch base64 from Evolution API
+        # This is from data.key.id, not from imageMessage
+        message_key_id = key.get("id")
+        
+        # Get mimetype
         mimetype = image_msg.get("mimetype", "image/jpeg")
         
-        if image_url:
+        print(f'message_key_id - {message_key_id}')
+        
+        if message_key_id:
             return IncomingMessage(
                 sender=sender,
                 type="image",
-                image_url=image_url,
-                mimetype=mimetype
+                image_url="",  # Will be fetched via Evolution API base64 endpoint
+                mimetype=mimetype,
+                message_key_id=message_key_id
             )
     
     # Check for text message (conversation)

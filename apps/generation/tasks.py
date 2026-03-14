@@ -6,8 +6,8 @@ This module provides integration with ComfyUI for image generation.
 
 import logging
 
-from comfyui.tasks import run_comfyui_workflow
-from comfyui.models import ComfyJob
+from apps.comfyui.tasks import run_comfyui_workflow
+from apps.comfyui.models import ComfyJob
 
 logger = logging.getLogger(__name__)
 

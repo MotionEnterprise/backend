@@ -1,5 +1,5 @@
 # Django and extensions
-Django>=6.0,<7.0
+Django==5.2.12
 djangorestframework>=3.15,<4.0
 django-cors-headers>=4.0,<5.0
 django_celery_results>=2.5,<3.0
@@ -14,6 +14,9 @@ asgiref>=3.8,<4.0
 # MongoDB
 pymongo>=4.6,<5.0
 mongoengine>=0.28,<1.0
+
+# Supabase Storage
+supabase>=2.0,<3.0
 
 # HTTP clients
 requests>=2.31,<3.0

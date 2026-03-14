@@ -167,62 +167,72 @@ async def stream_progress(
     ws_url = f"{comfy_config.ws_url}/ws?clientId={client_id}"
 
     try:
-        async with websockets.connect(
-            ws_url, ping_interval=20, ping_timeout=30, open_timeout=10
-        ) as ws:
-            async for raw_msg in ws:
+        async with aiohttp.ClientSession() as session:
+            async with session.ws_connect(
+                ws_url,
+                timeout=10.0,
+                receive_timeout=30.0,
+                autoping=True,
+                heartbeat=20.0
+            ) as ws:
+                async for raw_msg in ws:
+                    if raw_msg.type == aiohttp.WSMsgType.BINARY:
+                        # Binary = preview frame, skip JSON parsing
+                        yield {"type": "preview", "data": {"size": len(raw_msg.data)}, "done": False}
+                        continue
+                    elif raw_msg.type == aiohttp.WSMsgType.TEXT:
+                        msg = json.loads(raw_msg.data)
+                        msg_type = msg.get("type")
+                        msg_data = msg.get("data", {})
+                        msg_prompt_id = msg_data.get("prompt_id")
 
-                # Binary = preview frame, skip JSON parsing
-                if isinstance(raw_msg, bytes):
-                    yield {"type": "preview", "data": {"size": len(raw_msg)}, "done": False}
-                    continue
+                        if msg_type == "progress":
+                            step = msg_data.get("value", 0)
+                            total = max(msg_data.get("max", 1), 1)
+                            yield {
+                                "type": "progress",
+                                "data": {"step": step, "total": total, "percent": round(step / total * 100)},
+                                "prompt_id": prompt_id,
+                                "done": False,
+                            }
 
-                msg = json.loads(raw_msg)
-                msg_type = msg.get("type")
-                msg_data = msg.get("data", {})
-                msg_prompt_id = msg_data.get("prompt_id")
+                        elif msg_type == "executing":
+                            node_id = msg_data.get("node")
+                            if node_id is None and msg_prompt_id == prompt_id:
+                                yield {"type": "complete", "data": {}, "prompt_id": prompt_id, "done": True}
+                                return
+                            yield {
+                                "type": "executing",
+                                "data": {"node_id": node_id},
+                                "prompt_id": prompt_id,
+                                "done": False,
+                            }
 
-                if msg_type == "progress":
-                    step = msg_data.get("value", 0)
-                    total = max(msg_data.get("max", 1), 1)
-                    yield {
-                        "type": "progress",
-                        "data": {"step": step, "total": total, "percent": round(step / total * 100)},
-                        "prompt_id": prompt_id,
-                        "done": False,
-                    }
+                        elif msg_type == "executed":
+                            yield {
+                                "type": "executed",
+                                "data": msg_data.get("output", {}),
+                                "prompt_id": prompt_id,
+                                "done": False,
+                            }
 
-                elif msg_type == "executing":
-                    node_id = msg_data.get("node")
-                    if node_id is None and msg_prompt_id == prompt_id:
-                        yield {"type": "complete", "data": {}, "prompt_id": prompt_id, "done": True}
-                        return
-                    yield {
-                        "type": "executing",
-                        "data": {"node_id": node_id},
-                        "prompt_id": prompt_id,
-                        "done": False,
-                    }
+                        elif msg_type == "execution_error":
+                            raise ComfyExecutionError(
+                                msg_data.get("exception_message", "Unknown execution error"),
+                                node_id=msg_data.get("node_id"),
+                                node_type=msg_data.get("node_type"),
+                            )
 
-                elif msg_type == "executed":
-                    yield {
-                        "type": "executed",
-                        "data": msg_data.get("output", {}),
-                        "prompt_id": prompt_id,
-                        "done": False,
-                    }
+                        elif msg_type == "status":
+                            yield {"type": "status", "data": msg_data, "prompt_id": prompt_id, "done": False}
+                    
+                    elif raw_msg.type == aiohttp.WSMsgType.ERROR:
+                        raise ComfyConnectionError(f"WebSocket error: {ws.exception()}")
+                    
+                    elif raw_msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING):
+                        break
 
-                elif msg_type == "execution_error":
-                    raise ComfyExecutionError(
-                        msg_data.get("exception_message", "Unknown execution error"),
-                        node_id=msg_data.get("node_id"),
-                        node_type=msg_data.get("node_type"),
-                    )
-
-                elif msg_type == "status":
-                    yield {"type": "status", "data": msg_data, "prompt_id": prompt_id, "done": False}
-
-    except websockets.exceptions.WebSocketException as e:
-        raise ComfyConnectionError(f"WebSocket error: {e}")
+    except aiohttp.ClientError as e:
+        raise ComfyConnectionError(f"WebSocket connection error: {e}")
     except asyncio.TimeoutError:
         raise ComfyTimeoutError(f"Timed out waiting for workflow {prompt_id}")

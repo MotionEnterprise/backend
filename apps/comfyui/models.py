@@ -35,7 +35,7 @@ class ComfyJob(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     error_message = models.TextField(null=True, blank=True)
 
-    # Results — stored as JSON list of {filename, gridfs_id, file_type, content_type}
+    # Results — stored as JSON list of {filename, file_path, bucket_name, file_type, content_type}
     output_files = models.JSONField(default=list)
 
     # Timestamps

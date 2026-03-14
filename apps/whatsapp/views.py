@@ -76,6 +76,7 @@ class WhatsAppWebhookView(APIView):
         try:
             # Step 1: Parse payload
             message = parse_evolution_payload(request.data)
+            print(f'request headers - ', request.headers)
             
             # If no valid message, return 200 (Evolution API expects acknowledgment)
             if message is None:

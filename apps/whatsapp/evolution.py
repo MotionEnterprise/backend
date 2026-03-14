@@ -7,6 +7,7 @@ Functions for sending messages and downloading media via Evolution API.
 import os
 import logging
 import requests
+import base64
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -88,13 +89,20 @@ def send_media_message(whatsapp_number: str, media_url: str, caption: str = "") 
     try:
         api_url, instance_name, _ = get_evolution_config()
         url = f"{api_url}/message/sendMedia/{instance_name}"
-        
+        # 1️⃣ download image from supabase
+        # img_data = requests.get(media_url).content
+
+        # 2️⃣ convert to base64
+        # media_base64 = base64.b64encode(img_data).decode()
         payload = {
             "number": whatsapp_number,
             "mediatype": "image",
+            "mimetype": "image/jpeg",
             "media": media_url,
             "caption": caption
         }
+        print(payload)
+        
         
         response = requests.post(url, json=payload, headers=get_headers(), timeout=30)
         response.raise_for_status()
@@ -105,21 +113,83 @@ def send_media_message(whatsapp_number: str, media_url: str, caption: str = "") 
         raise
 
 
-def download_image(url: str) -> Optional[bytes]:
+def get_image_from_evolution_api(message_key_id: str) -> Optional[bytes]:
     """
-    Download an image from a URL.
+    Get image in base64 format from Evolution API using message key ID,
+    then decode to binary.
+    
+    Endpoint: POST /chat/getBase64FromMediaMessage/{instance_name}
+    Body: {"messageKey": {"id": "message_key_id"}}
     
     Args:
-        url: The CDN URL to download from
+        message_key_id: The message key ID from data.key.id
         
     Returns:
         bytes or None: Raw image bytes or None on failure
     """
+    import base64
+    
     try:
-        response = requests.get(url, timeout=30)
-        response.raise_for_status()
-        return response.content
+        api_url, instance_name, _ = get_evolution_config()
+        url = f"{api_url}/chat/getBase64FromMediaMessage/{instance_name}"
         
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to download image from {url}: {str(e)}")
+        payload = {
+            "message": {
+                "key": {
+                    "id": message_key_id
+                }
+            }
+        }
+        
+        response = requests.post(url, json=payload, headers=get_headers(), timeout=30)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        # Get base64 string from response
+        base64_string = data.get("base64") or data.get("media")
+        
+        if base64_string:
+            # Decode base64 to binary
+            image_bytes = base64.b64decode(base64_string)
+            logger.info(f"Successfully fetched and decoded image for message {message_key_id}")
+            return image_bytes
+        
+        logger.warning(f"No base64 in response for message {message_key_id}: {data}")
         return None
+        
+    except Exception as e:
+        logger.error(f"Failed to get image from Evolution API for {message_key_id}: {str(e)}")
+        return None
+
+
+def download_image(url: str, message_key_id: Optional[str] = None) -> Optional[bytes]:
+    """
+    Download an image. If message_key_id is provided, fetch base64 from 
+    Evolution API and decode to binary.
+    
+    Args:
+        url: The CDN URL to download from (can be empty if using message_key_id)
+        message_key_id: Optional message key ID to fetch base64 from Evolution API
+        
+    Returns:
+        bytes or None: Raw image bytes or None on failure
+    """
+    # If we have a message_key_id, use Evolution API to get base64
+    if message_key_id:
+        image_bytes = get_image_from_evolution_api(message_key_id)
+        if image_bytes:
+            return image_bytes
+        # Fallback: try URL anyway if Evolution API fails
+    
+    # Fallback to URL download
+    if url:
+        try:
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            return response.content
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to download image from {url}: {str(e)}")
+            return None
+    
+    return None

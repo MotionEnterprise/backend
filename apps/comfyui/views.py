@@ -206,8 +206,8 @@ class FileDownloadView(APIView):
     """
     GET /comfyui/download/?filename=&subfolder=&type=output
     
-    Proxy-download a file directly from ComfyUI (useful before GridFS save completes).
-    For final access, prefer the Media App GridFS URL.
+    Proxy-download a file directly from ComfyUI (useful before Supabase save completes).
+    For final access, prefer the Media App Supabase URL.
     """
     
     def get(self, request):

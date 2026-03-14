@@ -5,8 +5,11 @@ This file maps jewellery types to their categories and human parts.
 Used for the WhatsApp conversation flow.
 """
 
+from typing import Optional
+
+
 # List of all jewellery types with their mappings
-JEWELLERY_TYPES = [
+JEWELLERY_TYPES = [ 
     {
         "id": "ring",
         "label": "Ring",
@@ -140,7 +143,7 @@ def get_image_type_by_option(option: str):
     return None
 
 
-def build_image_type_options_text(jewellery_type: dict = None):
+def build_image_type_options_text(jewellery_type: Optional[dict] = None):
     """
     Build the options text for the image type question.
     
