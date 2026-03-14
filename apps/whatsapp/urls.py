@@ -1,6 +1,10 @@
+"""
+WhatsApp URL Configuration
+"""
+
 from django.urls import path
-from .views import webhook
+from .views import WhatsAppWebhookView
 
 urlpatterns = [
-    path("webhook/", webhook),
+    path("", WhatsAppWebhookView.as_view(), name="whatsapp-webhook"),
 ]

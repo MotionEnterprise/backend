@@ -20,7 +20,13 @@ from django.urls import path, include
 urlpatterns = [
     # Django admin
     path('admin/', admin.site.urls),
-    path('', include('apps.whatsapp.urls')),    
+    
+    # WhatsApp webhook
+    path('api/webhook/whatsapp/', include('apps.whatsapp.urls')),
+    
     # Library app API endpoints
     path('api/library/', include('apps.library.urls')),
+    
+    # ComfyUI API endpoints
+    path('comfyui/', include('apps.comfyui.urls')),
 ]
