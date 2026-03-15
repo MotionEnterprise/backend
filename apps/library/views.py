@@ -326,6 +326,51 @@ class PromptDetailView(View):
             if 'custom_fields' in data:
                 prompt.custom_fields = data['custom_fields']
             
+            # Update versioning
+            versioning = data.get('versioning', {})
+            if versioning:
+                if isinstance(versioning, dict):
+                    # Get existing versions
+                    existing_versions = prompt.versions.copy() if prompt.versions else []
+                    existing_version_numbers = {v.get('version') for v in existing_versions}
+                    
+                    # Update versions array if provided - merge/attach new versions
+                    if 'versions' in versioning:
+                        versions = versioning['versions']
+                        if isinstance(versions, list):
+                            for v in versions:
+                                if isinstance(v, dict):
+                                    version_num = v.get('version')
+                                    # Only add if version doesn't already exist
+                                    if version_num and version_num not in existing_version_numbers:
+                                        version_entry = {
+                                            'version': version_num,
+                                            'content_text': v.get('content_text', prompt.content_text),
+                                            'changelog': v.get('changelog', ''),
+                                            'created_by': v.get('created_by'),
+                                            'created_at': v.get('created_at') or datetime.utcnow().isoformat()
+                                        }
+                                        existing_versions.append(version_entry)
+                                        existing_version_numbers.add(version_num)
+                                    # If version exists, you could update it here if needed
+                                    elif version_num:
+                                        # Update existing version entry
+                                        for i, existing in enumerate(existing_versions):
+                                            if existing.get('version') == version_num:
+                                                existing_versions[i] = {
+                                                    'version': version_num,
+                                                    'content_text': v.get('content_text', existing.get('content_text')),
+                                                    'changelog': v.get('changelog', existing.get('changelog', '')),
+                                                    'created_by': v.get('created_by', existing.get('created_by')),
+                                                    'created_at': v.get('created_at', existing.get('created_at'))
+                                                }
+                                                break
+                            prompt.versions = existing_versions
+                    
+                    # Update active_version if provided
+                    if 'active_version' in versioning:
+                        prompt.active_version = versioning['active_version']
+            
             if 'updated_by' in data:
                 prompt.updated_by = data['updated_by']
             
