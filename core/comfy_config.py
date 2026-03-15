@@ -18,19 +18,26 @@ class ComfyUIConfig:
     
     Properties:
         host: ComfyUI server hostname or IP
+        api_path: API path prefix (e.g., "/api" for cloud.comfy.org)
         port: ComfyUI server port
         protocol: HTTP or HTTPS
         ws_protocol: WebSocket protocol (ws or wss)
-        base_url: Full HTTP base URL
+        base_url: Full HTTP base URL (includes api_path)
         ws_url: Full WebSocket URL
         ws_timeout: WebSocket connection timeout in seconds
         request_timeout: HTTP request timeout in seconds
-        api_key: Optional API key for ComfyUI authentication
+        api_key: Optional API key for ComfyUI Cloud authentication
+        headers: Dict of headers including X-API-Key if configured
     """
 
     @property
     def host(self) -> str:
         return getattr(settings, "COMFYUI_HOST", "127.0.0.1")
+
+    @property
+    def api_path(self) -> str:
+        """API path prefix (e.g., "/api" for cloud.comfy.org, "" for local)."""
+        return getattr(settings, "COMFYUI_API_PATH", "")
 
     @property
     def port(self) -> int:
@@ -52,10 +59,13 @@ class ComfyUIConfig:
 
     @property
     def base_url(self) -> str:
-        return f"{self.protocol}://{self.host}"
+        """Full HTTP base URL including API path."""
+        path = self.api_path.rstrip('/')
+        return f"{self.protocol}://{self.host}{path}"
 
     @property
     def ws_url(self) -> str:
+        """Full WebSocket URL (without API path, just host)."""
         return f"{self.ws_protocol}://{self.host}"
 
     @property
@@ -68,8 +78,16 @@ class ComfyUIConfig:
 
     @property
     def api_key(self) -> str | None:
-        """Optional API key for ComfyUI authentication."""
+        """Optional API key for ComfyUI Cloud authentication."""
         return getattr(settings, "COMFYUI_API_KEY", None)
+
+    @property
+    def headers(self) -> dict:
+        """HTTP headers including API key if configured."""
+        headers = {}
+        if self.api_key:
+            headers["X-API-Key"] = self.api_key
+        return headers
 
 
 # Singleton — import this everywhere, never import settings directly

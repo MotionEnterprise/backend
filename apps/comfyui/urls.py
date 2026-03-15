@@ -8,11 +8,13 @@ Provides REST API endpoints for:
 - Job status polling
 - Output retrieval
 - Queue management
+- Test endpoint
 """
 
 from django.urls import path
 
 from . import views
+from .test_endpoint import ComfyUITestRunView
 
 app_name = 'comfyui'
 
@@ -25,4 +27,6 @@ urlpatterns = [
     path('download/', views.FileDownloadView.as_view(), name='comfyui-download'),
     path('queue/', views.QueueView.as_view(), name='comfyui-queue'),
     path('queue/interrupt/', views.InterruptView.as_view(), name='comfyui-interrupt'),
+    # Test endpoint
+    path('test/run/', ComfyUITestRunView.as_view(), name='comfyui-test-run'),
 ]

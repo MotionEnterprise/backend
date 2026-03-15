@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     
     # Third-party apps
@@ -170,6 +171,7 @@ CHANNEL_LAYERS = {
 
 # ── ComfyUI ───────────────────────────────────────────────────────────────────
 COMFYUI_HOST = os.getenv("COMFYUI_HOST", "127.0.0.1")
+COMFYUI_API_PATH = os.getenv("COMFYUI_API_PATH", "")
 COMFYUI_PORT = int(os.getenv("COMFYUI_PORT", "8188"))
 COMFYUI_PROTOCOL = os.getenv("COMFYUI_PROTOCOL", "http")
 COMFYUI_WS_PROTOCOL = os.getenv("COMFYUI_WS_PROTOCOL", "ws")

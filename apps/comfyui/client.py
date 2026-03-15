@@ -38,12 +38,14 @@ async def submit_workflow(workflow: dict, client_id: str) -> str:
     """
     url = f"{comfy_config.base_url}/prompt"
     payload = {"prompt": workflow, "client_id": client_id}
+    headers = comfy_config.headers
 
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 url,
                 json=payload,
+                headers=headers,
                 timeout=aiohttp.ClientTimeout(total=comfy_config.request_timeout),
             ) as resp:
                 if resp.status != 200:
@@ -82,9 +84,10 @@ async def upload_file(
     form.add_field("image", file_bytes, filename=filename, content_type=content_type)
     form.add_field("type", folder_type)
     form.add_field("overwrite", "true" if overwrite else "false")
+    headers = comfy_config.headers
 
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, data=form) as resp:
+        async with session.post(url, data=form, headers=headers) as resp:
             if resp.status != 200:
                 body = await resp.text()
                 raise ComfyConnectionError(
@@ -99,8 +102,10 @@ async def get_history(prompt_id: str) -> dict:
     Returns the job's output dict, or {} if not found yet.
     """
     url = f"{comfy_config.base_url}/history/{prompt_id}"
+    headers = comfy_config.headers
+    
     async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
+        async with session.get(url, headers=headers) as resp:
             if resp.status == 404:
                 return {}
             data = await resp.json()
@@ -115,9 +120,10 @@ async def download_output_file(
     """
     url = f"{comfy_config.base_url}/view"
     params = {"filename": filename, "subfolder": subfolder, "type": file_type}
+    headers = comfy_config.headers
 
     async with aiohttp.ClientSession() as session:
-        async with session.get(url, params=params) as resp:
+        async with session.get(url, params=params, headers=headers) as resp:
             if resp.status != 200:
                 raise ComfyConnectionError(
                     f"Download failed ({filename}): HTTP {resp.status}"
@@ -128,23 +134,29 @@ async def download_output_file(
 async def get_queue() -> dict:
     """GET /queue"""
     url = f"{comfy_config.base_url}/queue"
+    headers = comfy_config.headers
+    
     async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
+        async with session.get(url, headers=headers) as resp:
             return await resp.json()
 
 
 async def interrupt_job() -> None:
     """POST /interrupt — stop the current job."""
     url = f"{comfy_config.base_url}/interrupt"
+    headers = comfy_config.headers
+    
     async with aiohttp.ClientSession() as session:
-        await session.post(url)
+        await session.post(url, headers=headers)
 
 
 async def get_system_stats() -> dict:
     """GET /system_stats — for health checks."""
     url = f"{comfy_config.base_url}/system_stats"
+    headers = comfy_config.headers
+    
     async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
+        async with session.get(url, headers=headers) as resp:
             return await resp.json()
 
 
@@ -164,7 +176,10 @@ async def stream_progress(
         ComfyExecutionError: On ComfyUI-side error.
         ComfyTimeoutError: On timeout.
     """
+    # Build WebSocket URL with client_id and optionally API key for cloud
     ws_url = f"{comfy_config.ws_url}/ws?clientId={client_id}"
+    if comfy_config.api_key:
+        ws_url += f"&api_key={comfy_config.api_key}"
 
     try:
         async with aiohttp.ClientSession() as session:
