@@ -6,6 +6,7 @@ Builds the Flux2 workflow JSON with injected input image filename and prompt.
 
 import copy
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -229,6 +230,11 @@ def build_workflow(comfyui_filename: str, prompt: str) -> dict:
     clip_node = workflow.get("68:6")
     if isinstance(clip_node, dict):
         clip_node["inputs"]["text"] = prompt
+
+    # Inject random seed (Node 68:25 - RandomNoise) for variation
+    random_noise_node = workflow.get("68:25")
+    if isinstance(random_noise_node, dict):
+        random_noise_node["inputs"]["noise_seed"] = random.randint(0, 2**63 - 1)
 
     logger.info(
         f"Built workflow: image={comfyui_filename}, "

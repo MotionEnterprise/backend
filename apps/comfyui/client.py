@@ -101,7 +101,7 @@ async def get_history(prompt_id: str) -> dict:
     GET /history/{prompt_id}
     Returns the job's output dict, or {} if not found yet.
     """
-    url = f"{comfy_config.base_url}/history/{prompt_id}"
+    url = f"{comfy_config.base_url}/history_v2/{prompt_id}"
     headers = comfy_config.headers
     
     async with aiohttp.ClientSession() as session:
@@ -179,7 +179,7 @@ async def stream_progress(
     # Build WebSocket URL with client_id and optionally API key for cloud
     ws_url = f"{comfy_config.ws_url}/ws?clientId={client_id}"
     if comfy_config.api_key:
-        ws_url += f"&api_key={comfy_config.api_key}"
+        ws_url += f"&token={comfy_config.api_key}"
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -222,6 +222,11 @@ async def stream_progress(
                                 "prompt_id": prompt_id,
                                 "done": False,
                             }
+
+                        elif msg_type == "execution_success":
+                            if msg_prompt_id == prompt_id:
+                                yield {"type": "complete", "data": {}, "prompt_id": prompt_id, "done": True}
+                                return
 
                         elif msg_type == "executed":
                             yield {
